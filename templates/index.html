@@ -7,115 +7,176 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      transition: background-color 0.8s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
-      transition: background-color 0.5s ease;
+      min-height: 100vh;
+    }
+
+    /* Nền sáng khi bật đèn */
+    body.light-on {
+      background-color: #fff8e1;
     }
 
     h1 {
-      margin-bottom: 30px;
+      margin-bottom: 40px;
       font-size: 2.5rem;
-      color: #00796b;
+      color: #333;
     }
 
-    .btn-container {
-      display: flex;
-      gap: 40px;
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 80px;
+      height: 40px;
     }
 
-    .control-btn {
-      padding: 20px 40px;
-      font-size: 1.5rem;
-      border: none;
-      border-radius: 10px;
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: 0.4s;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      border-radius: 34px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
-    .on-btn {
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 32px; width: 32px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
       background-color: #4caf50;
-      color: white;
     }
 
-    .on-btn:hover {
-      background-color: #45a049;
+    input:checked + .slider:before {
+      transform: translateX(40px);
     }
 
-    .off-btn {
-      background-color: #f44336;
-      color: white;
+    .bulb {
+      margin-top: 40px;
+      width: 100px;
+      height: 100px;
+      background-color: #ccc;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      transition: 0.4s;
     }
 
-    .off-btn:hover {
-      background-color: #e53935;
+    .bulb.on {
+      background-color: #ffeb3b;
+      box-shadow: 0 0 40px #ffeb3b;
     }
 
     .status {
-      margin-top: 40px;
+      margin-top: 20px;
       font-size: 1.2rem;
-      color: #333;
+      color: #555;
     }
   </style>
 </head>
-<body id="mainBody">
+<body>
 
-  <h1>Smart Light Control</h1>
+  <h1>
+  <span class="light-icon" aria-hidden="true">
+    <!-- Icon đèn bên trái -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#ffeb3b" viewBox="0 0 24 24" stroke="#fbc02d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21h6M12 17v4M7 10a5 5 0 0 1 10 0c0 2.5-3 5-5 5s-5-2.5-5-5z"/>
+    </svg>
+  </span>
+  Smart Light Control
+  <span class="light-icon" aria-hidden="true">
+    <!-- Icon đèn bên phải -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#ffeb3b" viewBox="0 0 24 24" stroke="#fbc02d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21h6M12 17v4M7 10a5 5 0 0 1 10 0c0 2.5-3 5-5 5s-5-2.5-5-5z"/>
+    </svg>
+  </span>
+</h1>
 
-  <div class="btn-container">
-    <button class="control-btn on-btn" onclick="sendCommand('1')">Turn ON</button>
-    <button class="control-btn off-btn" onclick="sendCommand('0')">Turn OFF</button>
-  </div>
+  <!-- Toggle switch -->
+  <label class="switch">
+    <input type="checkbox" id="lightSwitch" onchange="handleSwitch(this)">
+    <span class="slider"></span>
+  </label>
 
+  <!-- Bulb visual -->
+  <div class="bulb" id="bulb"></div>
+
+  <!-- Status message -->
   <div class="status" id="statusMsg">Status: Waiting for command...</div>
 
   <script>
-    function updateBackground(command) {
-      const body = document.getElementById('mainBody');
-      const status = document.getElementById('statusMsg');
+    function handleSwitch(switchElement) {
+      const command = switchElement.checked ? '1' : '0';
+      const bulb = document.getElementById('bulb');
+      const body = document.body;
 
+      // Cập nhật trạng thái bóng đèn
+      bulb.classList.toggle('on', command === '1');
+
+      // Thêm hoặc xóa class để đổi màu nền
       if (command === '1') {
-        body.style.backgroundColor = '#fff9c4';  // vàng nhạt
-        status.innerText = 'Status: Light is ON';
-      } else if (command === '0') {
-        body.style.backgroundColor = '#e0e0e0';  // xám nhạt
-        status.innerText = 'Status: Light is OFF';
+        body.classList.add('light-on');
       } else {
-        body.style.backgroundColor = '#eeeeee';
-        status.innerText = 'Status: Unknown';
+        body.classList.remove('light-on');
       }
+
+      // Gửi lệnh đến server
+      sendCommand(command);
     }
 
     function sendCommand(command) {
       fetch('/api/control', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ command: command })
       })
       .then(res => res.json())
       .then(data => {
-        updateBackground(command);
+        const statusMsg = document.getElementById('statusMsg');
+        statusMsg.textContent = `Status: ${data.status || 'Command sent'}`;
       })
       .catch(err => {
-        document.getElementById('statusMsg').innerText = "Status: Error sending command.";
         console.error(err);
+        document.getElementById('statusMsg').textContent = 'Status: Error sending command';
       });
     }
-
-    // Gọi API khi trang vừa load
-    window.onload = function () {
+        // Gọi khi trang vừa load để lấy trạng thái từ server
+    window.onload = function() {
       fetch('/api/control')
         .then(res => res.json())
         .then(data => {
           const command = data.command;
-          updateBackground(command);
+          const lightSwitch = document.getElementById('lightSwitch');
+          const bulb = document.getElementById('bulb');
+          const body = document.body;
+          const statusMsg = document.getElementById('statusMsg');
+
+          // Cập nhật giao diện theo trạng thái hiện tại
+          const isOn = command === '1';
+          lightSwitch.checked = isOn;
+          bulb.classList.toggle('on', isOn);
+          body.classList.toggle('light-on', isOn);
+          statusMsg.textContent = `Status: Command set to ${isOn ? '1' : '0'}`;
         })
         .catch(err => {
-          document.getElementById('statusMsg').innerText = 'Status: Error loading state.';
           console.error(err);
+          document.getElementById('statusMsg').textContent = 'Status: Error getting command';
         });
     }
   </script>
