@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 from db_connector_rasp import get_db_connection
+from pyngrok import ngrok
 
 app = Flask(__name__)
 
@@ -54,4 +55,6 @@ def get_command():
         conn.close()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    public_url = ngrok.connect(4000)
+    print(f" * Public URL: {public_url}")
+    app.run(host='0.0.0.0', port=4000, debug=True)
