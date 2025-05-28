@@ -55,6 +55,6 @@ def get_command():
         conn.close()
 
 if __name__ == '__main__':
-    public_url = ngrok.connect(4000)
-    print(f" * Public URL: {public_url}")
-    app.run(host='0.0.0.0', port=4000, debug=True)
+    # public_url = ngrok.connect(5000)
+    # print(f" * Public URL: {public_url}")
+    app.run(host='0.0.0.0', port=5000, debug=True)
