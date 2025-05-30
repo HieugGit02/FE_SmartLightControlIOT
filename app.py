@@ -54,7 +54,32 @@ def get_command():
         cursor.close()
         conn.close()
 
+@app.route('/api/delay', methods=['POST'])
+def set_delay_time():
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({'error': 'Database connection failed'}), 500
+
+    try:
+        data = request.get_json()
+        s = data.get('s')
+        if s is None:
+            return jsonify({'error': 'Missing delay time parameter'}), 400
+
+        cursor = conn.cursor()
+        cursor.execute("UPDATE delay_time SET dt_value = %s", (s,))
+        conn.commit()
+
+        return jsonify({'status': f'Delay time updated successfully {s}s'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
 if __name__ == '__main__':
-    # public_url = ngrok.connect(5000)
-    # print(f" * Public URL: {public_url}")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    public_url = ngrok.connect(5000)
+    print(f" * Public URL: {public_url}")
+    app.run(host='0.0.0.0', port=5000)

@@ -4,9 +4,16 @@ from mysql.connector import Error
 def get_db_connection():
     conn = None
     try:
+        # conn = mysql.connector.connect(
+        #     host="192.168.3.109",
+        #     user="admin",
+        #     password="admin",
+        #     database="lamp_db",
+        #     port=3306 
+        # )
         conn = mysql.connector.connect(
-            host="192.168.3.109",
-            user="admin",
+            host="localhost",
+            user="root",
             password="admin",
             database="lamp_db",
             port=3306 
