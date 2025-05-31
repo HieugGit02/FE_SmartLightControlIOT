@@ -1,259 +1,277 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Smart Light Control</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f0f0f0;
-      transition: background-color 0.8s ease;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    /* Nền sáng khi bật đèn */
-    body.light-on {
-      background-color: #fff8e1;
-    }
-
-    h1 {
-      margin-bottom: 40px;
-      font-size: 2.5rem;
-      color: #333;
-    }
-
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 80px;
-      height: 40px;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      transition: 0.4s;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #ccc;
-      border-radius: 34px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 32px; width: 32px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
-
-    input:checked + .slider {
-      background-color: #4caf50;
-    }
-
-    input:checked + .slider:before {
-      transform: translateX(40px);
-    }
-
-    .bulb {
-      margin-top: 40px;
-      width: 100px;
-      height: 100px;
-      background-color: #ccc;
-      border-radius: 50%;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      transition: 0.4s;
-    }
-
-    .bulb.on {
-      background-color: #ffeb3b;
-      box-shadow: 0 0 40px #ffeb3b;
-    }
-
-    .status {
-      margin-top: 20px;
-      font-size: 1.2rem;
-      color: #555;
-    }
-
-    /* CSS DELAY TIME */
-    .delay-control {
-      position: absolute;
-      top: 10px;
-      right: 20px;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .delay-control input {
-      padding: 6px 10px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      width: 100px;
-      outline: none;
-    }
-
-    .delay-control button {
-      background-color: #4caf50;
-      border: none;
-      border-radius: 6px;
-      padding: 6px 10px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.3s ease;
-    }
-
-    .delay-control button:hover {
-      background-color: #388e3c;
-    }
-
-    .delay-control svg {
-      stroke: white;
-    }
-
-  </style>
-</head>
-<body>
-  <!-- SECTION DELAY TIME -->
-  <div class="delay-control">
-    <input type="number" id="delayInput" placeholder="Delay (s)" step="0.1">
-    <button onclick="updateDelay()" title="Update delay" type="button">
-      <!-- Clock Icon -->
-      <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
-      </svg>
-    </button>
-  </div>
-  <!-- END SECTION -->
-  <h1>
-  <span class="light-icon" aria-hidden="true">
-    <!-- Icon đèn bên trái -->
-    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#ffeb3b" viewBox="0 0 24 24" stroke="#fbc02d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 21h6M12 17v4M7 10a5 5 0 0 1 10 0c0 2.5-3 5-5 5s-5-2.5-5-5z"/>
-    </svg>
-  </span>
-  Smart Light Control
-  <span class="light-icon" aria-hidden="true">
-    <!-- Icon đèn bên phải -->
-    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#ffeb3b" viewBox="0 0 24 24" stroke="#fbc02d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 21h6M12 17v4M7 10a5 5 0 0 1 10 0c0 2.5-3 5-5 5s-5-2.5-5-5z"/>
-    </svg>
-  </span>
-</h1>
-
-  <!-- Toggle switch -->
-  <label class="switch">
-    <input type="checkbox" id="lightSwitch" onchange="handleSwitch(this)">
-    <span class="slider"></span>
-  </label>
-
-  <!-- Bulb visual -->
-  <div class="bulb" id="bulb"></div>
-
-  <!-- Status message -->
-  <div class="status" id="statusMsg">Status: Waiting for command...</div>
-
-  <script>
-    function handleSwitch(switchElement) {
-      const command = switchElement.checked ? '1' : '0';
-      const bulb = document.getElementById('bulb');
-      const body = document.body;
-
-      // Cập nhật trạng thái bóng đèn
-      bulb.classList.toggle('on', command === '1');
-
-      // Thêm hoặc xóa class để đổi màu nền
-      if (command === '1') {
-        body.classList.add('light-on');
-      } else {
-        body.classList.remove('light-on');
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Điều khiển Đèn</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f0f2f5;
+        padding: 30px;
+        transition: background 0.5s ease;
       }
 
-      // Gửi lệnh đến server
-      sendCommand(command);
-    }
+      .container {
+        display: flex;
+        gap: 40px;
+        justify-content: center;
+        align-items: flex-start;
+      }
 
-    function sendCommand(command) {
-      fetch('/api/control', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: command })
-      })
-      .then(res => res.json())
-      .then(data => {
-        const statusMsg = document.getElementById('statusMsg');
-        statusMsg.textContent = `Status: ${data.status || 'Command sent'}`;
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById('statusMsg').textContent = 'Status: Error sending command';
+      .mode-box {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        width: 300px;
+        text-align: center;
+        transition: 0.3s;
+      }
+
+      .mode-box h2 {
+        margin-bottom: 15px;
+      }
+
+      .toggle {
+        margin-bottom: 15px;
+      }
+
+      .toggle input[type="checkbox"] {
+        display: none;
+      }
+
+      .toggle-label {
+        background: #ddd;
+        border-radius: 30px;
+        cursor: pointer;
+        display: inline-block;
+        height: 30px;
+        width: 60px;
+        position: relative;
+        transition: background 0.3s;
+      }
+
+      .toggle-label::after {
+        content: "";
+        background: white;
+        border-radius: 50%;
+        position: absolute;
+        top: 3px;
+        left: 4px;
+        width: 24px;
+        height: 24px;
+        transition: 0.3s;
+      }
+
+      .toggle input[type="checkbox"]:checked + .toggle-label {
+        background: #4caf50;
+      }
+
+      .toggle input[type="checkbox"]:checked + .toggle-label::after {
+        transform: translateX(28px);
+      }
+
+      .control-btn {
+        width: 100px;
+        height: 50px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 0 6px #999;
+        user-select: none;
+        background: linear-gradient(145deg, #2a8aee, #0061d5);
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+      }
+
+      .control-btn.on {
+        background: linear-gradient(145deg, #28c76f, #1eb93a);
+        box-shadow: 0 6px #1a6c29;
+      }
+
+      .control-btn.off {
+        background: linear-gradient(145deg, #d9534f, #b92c27);
+        box-shadow: 0 6px #7f1e1a;
+      }
+
+      .control-btn:active {
+        box-shadow: 0 3px #666;
+        transform: translateY(3px);
+        outline: none;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      #status {
+        text-align: center;
+        margin-top: 20px;
+        font-weight: bold;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="text-align: center">Hệ thống Điều khiển Đèn</h1>
+
+    <div class="container">
+      <!-- Database Mode -->
+      <div class="mode-box">
+        <h2>ON/OFF (Database)</h2>
+        <div class="toggle">
+          <input type="checkbox" id="dbSwitch" />
+          <label for="dbSwitch" class="toggle-label"></label>
+        </div>
+        <div id="dbControl" class="hidden">
+          <button id="dbButton" class="control-btn off">Bật</button>
+        </div>
+      </div>
+
+      <!-- MQTT Mode -->
+      <div class="mode-box">
+        <h2>Chế độ MQTT</h2>
+        <div class="toggle">
+          <input type="checkbox" id="mqttSwitch" />
+          <label for="mqttSwitch" class="toggle-label"></label>
+        </div>
+        <div id="mqttControl" class="hidden">
+          <button id="mqttButton" class="control-btn off">Bật</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="status"></div>
+
+    <script>
+      const dbSwitch = document.getElementById("dbSwitch");
+      const mqttSwitch = document.getElementById("mqttSwitch");
+      const dbControl = document.getElementById("dbControl");
+      const mqttControl = document.getElementById("mqttControl");
+      const dbButton = document.getElementById("dbButton");
+      const mqttButton = document.getElementById("mqttButton");
+      const statusBox = document.getElementById("status");
+
+      let dbState = 0;
+      let mqttState = 0;
+
+      function updateButton(button, state) {
+        button.textContent = state === 1 ? "Tắt" : "Bật";
+        button.classList.toggle("on", state === 1);
+        button.classList.toggle("off", state === 0);
+      }
+
+      function updateBackground(state) {
+        document.body.style.background = state === 1 ? "#d1ffd6" : "#f0f2f5";
+      }
+
+      function showStatus(msg, success = true) {
+        statusBox.textContent = msg;
+        statusBox.style.color = success ? "green" : "red";
+      }
+
+      // Khi chuyển đổi chế độ
+      dbSwitch.addEventListener("change", () => {
+        if (dbSwitch.checked) {
+          mqttSwitch.checked = false;
+          dbControl.classList.remove("hidden");
+          mqttControl.classList.add("hidden");
+          updateBackground(dbState);
+        } else {
+          dbControl.classList.add("hidden");
+          updateBackground(0);
+        }
       });
-    }
-        // Gọi khi trang vừa load để lấy trạng thái từ server
-    window.onload = function() {
-      fetch('/api/control')
-        .then(res => res.json())
-        .then(data => {
-          const command = data.command;
-          const lightSwitch = document.getElementById('lightSwitch');
-          const bulb = document.getElementById('bulb');
-          const body = document.body;
-          const statusMsg = document.getElementById('statusMsg');
 
-          // Cập nhật giao diện theo trạng thái hiện tại
-          const isOn = command === '1';
-          lightSwitch.checked = isOn;
-          bulb.classList.toggle('on', isOn);
-          body.classList.toggle('light-on', isOn);
-          statusMsg.textContent = `Status: Command set to ${isOn ? '1' : '0'}`;
+      mqttSwitch.addEventListener("change", () => {
+        if (mqttSwitch.checked) {
+          dbSwitch.checked = false;
+          mqttControl.classList.remove("hidden");
+          dbControl.classList.add("hidden");
+          updateBackground(mqttState);
+        } else {
+          mqttControl.classList.add("hidden");
+          updateBackground(0);
+        }
+      });
+
+      // Gửi lệnh bật/tắt DB
+      dbButton.addEventListener("click", () => {
+        dbState = dbState === 0 ? 1 : 0;
+        fetch("/api/control", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: dbState }),
         })
-        .catch(err => {
-          console.error(err);
-          document.getElementById('statusMsg').textContent = 'Status: Error getting command';
-        });
-    }
-
-    function updateDelay() {
-      const delayVal = parseFloat(document.getElementById('delayInput').value);
-
-      if (isNaN(delayVal)) {
-        alert("Please enter a valid number for delay time.");
-        return;
-      }
-
-      fetch('/api/delay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ s: delayVal })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.status || 'Delay time updated successfully!');
-      })
-      .catch(err => {
-        console.error(err);
-        alert('Error updating delay time.');
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.error) {
+              updateButton(dbButton, dbState);
+              updateBackground(dbState);
+              showStatus("Cập nhật trạng thái DB thành công!");
+            } else {
+              showStatus("Lỗi DB: " + data.error, false);
+            }
+          })
+          .catch(() => showStatus("Lỗi kết nối đến API DB", false));
       });
-    }
-  </script>
 
-</body>
+      // Gửi lệnh bật/tắt MQTT
+      mqttButton.addEventListener("click", () => {
+        mqttState = mqttState === 0 ? 1 : 0;
+        fetch("/api/mqtt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: mqttState }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.error) {
+              updateButton(mqttButton, mqttState);
+              updateBackground(mqttState);
+              showStatus("Cập nhật trạng thái MQTT thành công!");
+            } else {
+              showStatus("Lỗi MQTT: " + data.error, false);
+            }
+          })
+          .catch(() => showStatus("Lỗi kết nối đến API MQTT", false));
+      });
+
+      // Khi tải trang, lấy trạng thái từ backend
+      window.addEventListener("DOMContentLoaded", () => {
+        fetch("/api/control")
+          .then((res) => res.json())
+          .then((data) => {
+            dbState = parseInt(data.command);
+            updateButton(dbButton, dbState);
+
+            if (dbState === 1) {
+              dbSwitch.checked = true;
+              dbControl.classList.remove("hidden");
+              mqttSwitch.checked = false;
+              mqttControl.classList.add("hidden");
+              updateBackground(1);
+            }
+          });
+
+        fetch("/api/mqtt")
+          .then((res) => res.json())
+          .then((data) => {
+            mqttState = parseInt(data.mqtt_command);
+            updateButton(mqttButton, mqttState);
+
+            if (mqttState === 1) {
+              mqttSwitch.checked = true;
+              mqttControl.classList.remove("hidden");
+              dbSwitch.checked = false;
+              dbControl.classList.add("hidden");
+              updateBackground(1);
+            }
+          });
+      });
+    </script>
+  </body>
 </html>
