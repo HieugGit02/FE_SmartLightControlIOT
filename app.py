@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 from db_connector_rasp import get_db_connection
-from pyngrok import ngrok
+# from pyngrok import ngrok
 
 app = Flask(__name__)
 
