@@ -11,12 +11,19 @@ def get_db_connection():
         #     database="lamp_db",
         #     port=3306 
         # )
+        # conn = mysql.connector.connect(
+        #     host="localhost",
+        #     user="root",
+        #     password="admin",
+        #     database="lamp_db",
+        #     port=3306 
+        # )
         conn = mysql.connector.connect(
-            host="localhost",
+            host="gondola.proxy.rlwy.net",
             user="root",
-            password="admin",
-            database="lamp_db",
-            port=3306 
+            password="nyIonlGEFsqeBrkwiIcBRcMKfxZvcqvB",
+            database="railway",
+            port=31348 
         )
         print("✅ Connection to MariaDB (MySQL) successful!")
     except Error as e:
@@ -24,8 +31,4 @@ def get_db_connection():
         
     return conn
 
-# import sqlite3
-
-# def get_db_connection():
-#     conn = sqlite3.connect('light.db')  # file SQLite bạn đang dùng
-#     return conn
+# get_db_connection()
