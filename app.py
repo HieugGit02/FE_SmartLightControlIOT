@@ -101,6 +101,12 @@ def get_delay_time():
         conn.close()
 
 if __name__ == '__main__':
-    public_url = ngrok.connect(8080)
-    print(f" * Public URL: {public_url}")
-    app.run(host='0.0.0.0', port=8080)
+    # LOCAL
+    # # public_url = ngrok.connect(8080)
+    # # print(f" * Public URL: {public_url}")
+    # app.run(host='0.0.0.0', port=8080)
+
+    # RAILWAY
+    import os
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
