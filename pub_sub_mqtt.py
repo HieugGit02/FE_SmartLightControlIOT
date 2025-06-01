@@ -9,6 +9,8 @@ MQTT_USER = "testmse21"
 MQTT_PASS = "Testmse21dn!"
 MQTT_TOPIC = "lamp/state"
 
+last_message = {"value": 0}  # Default state
+
 # ---- Subscriber Function ----
 def test_mqtt_subscribe():
     def on_connect(client, userdata, flags, rc):
@@ -57,7 +59,7 @@ def test_mqtt_publish(value):
         client.connect(MQTT_BROKER, MQTT_PORT, 60)
         client.loop_start()
 
-        result = client.publish(MQTT_TOPIC, str(value))
+        result = client.publish(MQTT_TOPIC, int(value))
         result.wait_for_publish()
         print(f"Published: {value} to topic {MQTT_TOPIC}")
 
@@ -68,3 +70,7 @@ def test_mqtt_publish(value):
         print("Publish failed:", e)
 
 # test_mqtt_publish(1)
+
+# test_mqtt_subscribe()
+def get_last_mqtt_state():
+    return last_message["value"]

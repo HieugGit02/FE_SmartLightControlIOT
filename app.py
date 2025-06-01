@@ -1,9 +1,16 @@
 from flask import Flask, request, jsonify, render_template
 from db_connector_rasp import get_db_connection
 # from pyngrok import ngrok
+from pub_sub_mqtt import test_mqtt_subscribe, test_mqtt_publish, get_last_mqtt_state
+
 
 app = Flask(__name__)
 
+# # Khởi động subscriber khi Flask chạy
+# test_mqtt_subscribe()
+
+
+# ---------- Flask API Endpoints ----------
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -53,6 +60,29 @@ def get_command():
     finally:
         cursor.close()
         conn.close()
+
+                
+# ---------- MQTT API ----------
+
+@app.route('/api/mqtt', methods=['POST'])
+def mqtt_publish_api():
+    try:
+        data = request.get_json()
+        command = int(data.get('command'))
+        if command not in (0, 1):
+            return jsonify({'error': 'Invalid command'}), 400
+
+        test_mqtt_publish(int(command))
+        return jsonify({'status': f'MQTT command {command} sent'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/mqtt', methods=['GET'])
+def mqtt_get_state():
+    value = get_last_mqtt_state()
+    print(f"[DEBUG] Current MQTT state: {value}")
+    return jsonify({'mqtt_command': value})
 
 @app.route('/api/delay', methods=['POST'])
 def set_delay_time():
@@ -104,9 +134,9 @@ if __name__ == '__main__':
     # LOCAL
     # # public_url = ngrok.connect(8080)
     # # print(f" * Public URL: {public_url}")
-    # app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=8080, debug=True)
 
-    # RAILWAY
-    import os
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
+    # # RAILWAY
+    # import os
+    # port = int(os.environ.get('PORT', 8080))
+    # app.run(host='0.0.0.0', port=port)
