@@ -112,7 +112,7 @@ void fetchDelayFromAPI() {
   Serial.print("Goi GET: ");
   Serial.println(fullUrl);
 
-  http.begin(httpClient, fullUrl);
+  http.begin(secureClient, fullUrl);
   http.addHeader("Content-Type", "application/json");
 
   int httpCode = http.GET();
@@ -149,7 +149,7 @@ void handleRestApi() {
 
   HTTPClient http;
   String fullUrl = String(base_url) + api_url;
-  http.begin(httpClient, fullUrl);
+  http.begin(secureClient, fullUrl);
   http.addHeader("Content-Type", "application/json");
   
   int httpCode = http.GET();
