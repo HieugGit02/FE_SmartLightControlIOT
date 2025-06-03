@@ -237,6 +237,11 @@
         return;
       }
 
+      if (delayVal < 0) {
+        alert("Delay time must be a non-negative number.");
+        return;
+      }
+
       fetch('/api/delay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -252,13 +257,51 @@
         });
     }
 
-    // Khi chuyển đổi chế độ
+    // // Khi chuyển đổi chế độ
+    // dbSwitch.addEventListener("change", () => {
+    //   if (dbSwitch.checked) {
+    //     mqttSwitch.checked = false;
+    //     dbControl.classList.remove("hidden");
+    //     mqttControl.classList.add("hidden");
+    //     updateBackground(dbState);
+    //   } else {
+    //     dbControl.classList.add("hidden");
+    //     updateBackground(0);
+    //   }
+    // });
+
+    // mqttSwitch.addEventListener("change", () => {
+    //   if (mqttSwitch.checked) {
+    //     dbSwitch.checked = false;
+    //     mqttControl.classList.remove("hidden");
+    //     dbControl.classList.add("hidden");
+    //     updateBackground(mqttState);
+    //   } else {
+    //     mqttControl.classList.add("hidden");
+    //     updateBackground(0);
+    //   }
+    // });
+
     dbSwitch.addEventListener("change", () => {
       if (dbSwitch.checked) {
         mqttSwitch.checked = false;
         dbControl.classList.remove("hidden");
         mqttControl.classList.add("hidden");
-        updateBackground(dbState);
+        dbState = 0;
+
+        // Gửi lệnh tắt đèn qua Database
+        fetch("/api/control", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: dbState }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            updateButton(dbButton, dbState);
+            updateBackground(dbState);
+            showStatus("Switched to Database mode. Lamp is OFF.");
+          })
+          .catch(() => showStatus("Error switching to DB mode", false));
       } else {
         dbControl.classList.add("hidden");
         updateBackground(0);
@@ -270,13 +313,27 @@
         dbSwitch.checked = false;
         mqttControl.classList.remove("hidden");
         dbControl.classList.add("hidden");
-        updateBackground(mqttState);
+        mqttState = 0;
+
+        // Gửi lệnh tắt đèn qua MQTT và cập nhật DB
+        fetch("/api/mqtt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: mqttState }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            updateButton(mqttButton, mqttState);
+            updateBackground(mqttState);
+            showStatus("Switched to MQTT mode. Lamp is OFF.");
+          })
+          .catch(() => showStatus("Error switching to MQTT mode", false));
+
       } else {
         mqttControl.classList.add("hidden");
         updateBackground(0);
       }
     });
-
 
 
     // Gửi lệnh bật/tắt DB
@@ -292,7 +349,7 @@
           if (!data.error) {
             updateButton(dbButton, dbState);
             updateBackground(dbState);
-            showStatus("Updateing DB state successfully!");
+            showStatus("Update DB state successfully!");
           } else {
             showStatus("Error DB: " + data.error, false);
           }
@@ -313,7 +370,7 @@
           if (!data.error) {
             updateButton(mqttButton, mqttState);
             updateBackground(mqttState);
-            showStatus("Updateing MQTT state successfully!");
+            showStatus("Update MQTT state successfully!");
           } else {
             showStatus("Error MQTT: " + data.error, false);
           }
