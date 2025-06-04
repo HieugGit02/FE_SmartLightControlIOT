@@ -130,6 +130,52 @@ def get_delay_time():
         cursor.close()
         conn.close()
 
+@app.route('/api/src', methods=['POST'])
+def set_source_value():
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({'error': 'Database connection failed'}), 500
+
+    try:
+        data = request.get_json()
+        s = data.get('s')
+        if s is None:
+            return jsonify({'error': 'Missing source value parameter'}), 400
+
+        cursor = conn.cursor()
+        cursor.execute("UPDATE source_control SET src_value = %s", (s,))
+        conn.commit()
+
+        return jsonify({'status': f'Source value updated successfully {s}'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/src', methods=['GET'])
+def get_source_value():
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({'error': 'Database connection failed'}), 500
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT src_value FROM source_control")
+        row = cursor.fetchone()
+        src_value = row[0] if row else 'na'
+
+        return jsonify({'src_value': src_value})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
 if __name__ == '__main__':
     # LOCAL
     # # public_url = ngrok.connect(8080)

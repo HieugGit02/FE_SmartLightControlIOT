@@ -177,11 +177,11 @@ void setup() {
   // pinMode(motionPin, INPUT);
   connectToWiFi();
 
-  secureClient.setInsecure(); // Accept all certs (dev only!)
-  mqttClient.setServer(mqtt_server, mqtt_port);
-  mqttClient.setCallback(mqttCallback);
+  // secureClient.setInsecure(); // Accept all certs (dev only!)
+  // mqttClient.setServer(mqtt_server, mqtt_port);
+  // mqttClient.setCallback(mqttCallback);
 
-  fetchDelayFromAPI();
+  // fetchDelayFromAPI();
 }
 
 // ===== Main Loop =====
