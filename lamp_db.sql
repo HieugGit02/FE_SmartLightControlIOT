@@ -10,6 +10,7 @@
 DROP TABLE lamps;
 DROP TABLE delay_time;
 DROP TABLE source_control;
+DROP TABLE lamp_audit;
 
 -- Create a simple table for lamps
 CREATE TABLE lamps (
@@ -27,6 +28,15 @@ CREATE TABLE source_control (
   src_value VARCHAR(20)
 );
 
+CREATE TABLE lamp_audit (
+  audit_id INT AUTO_INCREMENT PRIMARY KEY,
+  lamp_id INT,
+  old_state INT,
+  new_state INT,
+  action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- Insert a row into lamps
 INSERT INTO lamps (id, name, state) VALUES (1, 'Desk Lamp', 1);
 
@@ -37,3 +47,18 @@ INSERT INTO source_control (src_value) VALUES ('MQTT');
 
 -- Query the lamps table
 SELECT * FROM lamps;
+
+-- Audit log for Lamp state
+DELIMITER $$
+
+CREATE TRIGGER trg_lamp_state_update
+BEFORE UPDATE ON lamps
+FOR EACH ROW
+BEGIN
+  IF OLD.state <> NEW.state THEN
+    INSERT INTO lamp_audit (lamp_id, old_state, new_state)
+    VALUES (OLD.id, OLD.state, NEW.state);
+  END IF;
+END$$
+
+DELIMITER ;
