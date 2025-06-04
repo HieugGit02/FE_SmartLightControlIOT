@@ -21,6 +21,7 @@ const int wifiCount = sizeof(wifiList) / sizeof(wifiList[0]);
 const char *base_url = "https://fesmartlightcontroliotrailwayzero-production.up.railway.app";
 const char *api_url = "/api/control";
 const char *delay_api_url = "/api/delay";
+const char *src_api_url = "/api/src";
 
 // ===== MQTT - HiveMQ Cloud =====
 const char *mqtt_server = "21583ec947f6453f8e3793f0b34dde0b.s1.eu.hivemq.cloud";
@@ -43,6 +44,7 @@ unsigned long httpInterval = 5000;
 unsigned long lastMotionTime = 0;
 const unsigned long motionTimeout = 10000;
 bool motionActive = false;
+String srcValue = "DB";
 
 // ===== Connect to available WiFi =====
 void connectToWiFi()
@@ -191,6 +193,56 @@ void fetchDelayFromAPI()
   http.end();
 }
 
+// ===== Fetch Source Control from API =====
+void fetchSourceControlFromAPI()
+{
+  if (WiFi.status() != WL_CONNECTED)
+    return;
+
+  HTTPClient http;
+  String fullUrl = String(base_url) + src_api_url;
+  Serial.print("Calling API: ");
+  Serial.println(fullUrl);
+
+  if (!http.begin(secureClient, fullUrl))
+  {
+    Serial.println("HTTP begin failed!");
+    return;
+  }
+
+  http.addHeader("Content-Type", "application/json");
+
+  int httpCode = http.GET();
+  Serial.print("HTTP response code: ");
+  Serial.println(httpCode);
+
+  if (httpCode == 200)
+  {
+    String payload = http.getString();
+    Serial.println("API response:");
+    Serial.println(payload);
+
+    StaticJsonDocument<200> doc;
+    if (deserializeJson(doc, payload) == DeserializationError::Ok)
+    {
+      srcValue = doc["src_value"].as<String>();
+      Serial.print("Updated source control: ");
+      Serial.println(srcValue);
+    }
+    else
+    {
+      Serial.println("Failed to parse JSON");
+    }
+  }
+  else
+  {
+    Serial.print("Bad response: ");
+    Serial.println(http.getString());
+  }
+
+  http.end();
+}
+
 // ===== Handle REST API Poll =====
 void handleRestApi()
 {
@@ -248,14 +300,13 @@ void setup()
 // ===== Main Loop =====
 void loop()
 {
-  String source = "MQTT"; // "MOTION", "DB"
-
-  if (source == "MQTT") {
+  fetchSourceControlFromAPI();
+  if (srcValue == "MQTT") {
     if (!mqttClient.connected())
       reconnectMQTT();
     mqttClient.loop();
   } 
-  else if (source == "MOTION") {
+  else if (srcValue == "MOTION") {
     int motionValue = digitalRead(motionPin);
     if (motionValue == HIGH) {
       if (!motionActive) {
@@ -270,7 +321,7 @@ void loop()
       motionActive = false;
     }
   }
-  else if (source == "DB") {
+  else if (srcValue == "DB") {
     if (millis() - lastHttpRequestTime >= httpInterval) {
       lastHttpRequestTime = millis();
       handleRestApi();
