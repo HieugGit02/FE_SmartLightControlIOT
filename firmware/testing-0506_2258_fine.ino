@@ -3,10 +3,10 @@
 #include <ArduinoJson.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
+#include <functional>  // Needed for std::function
 
 // ===== WiFi Credentials =====
-struct WiFiCredentials
-{
+struct WiFiCredentials {
   const char *ssid;
   const char *password;
 };
@@ -47,27 +47,21 @@ bool motionActive = false;
 String srcValue = "DB";
 
 // ===== Connect to available WiFi =====
-void connectToWiFi()
-{
+void connectToWiFi() {
   Serial.println("Scanning saved WiFi networks...");
   int n = WiFi.scanNetworks();
-  for (int i = 0; i < wifiCount; i++)
-  {
-    for (int j = 0; j < n; j++)
-    {
-      if (WiFi.SSID(j) == wifiList[i].ssid)
-      {
+  for (int i = 0; i < wifiCount; i++) {
+    for (int j = 0; j < n; j++) {
+      if (WiFi.SSID(j) == wifiList[i].ssid) {
         Serial.print("Connecting to: ");
         Serial.println(wifiList[i].ssid);
         WiFi.begin(wifiList[i].ssid, wifiList[i].password);
         unsigned long startAttempt = millis();
-        while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < 15000)
-        {
+        while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < 15000) {
           delay(500);
           Serial.print(".");
         }
-        if (WiFi.status() == WL_CONNECTED)
-        {
+        if (WiFi.status() == WL_CONNECTED) {
           Serial.println("\nWiFi connected!");
           Serial.print("IP address: ");
           Serial.println(WiFi.localIP());
@@ -81,15 +75,13 @@ void connectToWiFi()
 }
 
 // ===== MQTT Callback =====
-void mqttCallback(char *topic, byte *payload, unsigned int length)
-{
+void mqttCallback(char *topic, byte *payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("]: ");
 
   String message;
-  for (unsigned int i = 0; i < length; i++)
-  {
+  for (unsigned int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
     message += (char)payload[i];
   }
@@ -98,43 +90,30 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
   Serial.print("Parsed message: ");
   Serial.println(message);
 
-  if (message == "1")
-  {
+  if (message == "1") {
     digitalWrite(ledPin, HIGH);
     Serial.println("LED turned ON by MQTT");
-  }
-  else if (message == "0")
-  {
+  } else if (message == "0") {
     digitalWrite(ledPin, LOW);
     Serial.println("LED turned OFF by MQTT");
-  }
-  else
-  {
+  } else {
     Serial.println("Unknown MQTT message");
   }
 }
 
 // ===== MQTT Connection =====
-void reconnectMQTT()
-{
-  while (!mqttClient.connected())
-  {
+void reconnectMQTT() {
+  while (!mqttClient.connected()) {
     Serial.print("Connecting to MQTT...");
-    if (mqttClient.connect("ESP8266Client", mqtt_user, mqtt_pass))
-    {
+    if (mqttClient.connect("ESP8266Client", mqtt_user, mqtt_pass)) {
       Serial.println("MQTT connected!");
-      if (mqttClient.subscribe(mqtt_topic))
-      {
+      if (mqttClient.subscribe(mqtt_topic)) {
         Serial.print("Subscribed to topic: ");
         Serial.println(mqtt_topic);
-      }
-      else
-      {
+      } else {
         Serial.println("Subscription failed!");
       }
-    }
-    else
-    {
+    } else {
       Serial.print("MQTT connection failed, state: ");
       Serial.println(mqttClient.state());
       delay(5000);
@@ -142,148 +121,81 @@ void reconnectMQTT()
   }
 }
 
-// ===== Fetch Delay from API =====
-void fetchDelayFromAPI()
-{
+// ===== Common API Caller =====
+bool callApiAndParse(const char* url, std::function<void(const JsonDocument&)> handler) {
   if (WiFi.status() != WL_CONNECTED)
-    return;
+    return false;
 
   HTTPClient http;
-  String fullUrl = String(base_url) + delay_api_url;
+  String fullUrl = String(base_url) + url;
   Serial.print("Calling API: ");
   Serial.println(fullUrl);
 
-  if (!http.begin(secureClient, fullUrl))
-  {
+  if (!http.begin(secureClient, fullUrl)) {
     Serial.println("HTTP begin failed!");
-    return;
+    return false;
   }
 
   http.addHeader("Content-Type", "application/json");
-
   int httpCode = http.GET();
   Serial.print("HTTP response code: ");
   Serial.println(httpCode);
 
-  if (httpCode == 200)
-  {
+  if (httpCode == 200) {
     String payload = http.getString();
     Serial.println("API response:");
     Serial.println(payload);
 
-    StaticJsonDocument<200> doc;
-    if (deserializeJson(doc, payload) == DeserializationError::Ok)
-    {
-      float dt = doc["dt_value"];
-      httpInterval = (unsigned long)(dt * 1000);
-      Serial.print("Updated delay interval: ");
-      Serial.println(httpInterval);
-    }
-    else
-    {
+    StaticJsonDocument<512> doc;
+    if (deserializeJson(doc, payload) == DeserializationError::Ok) {
+      handler(doc);
+    } else {
       Serial.println("Failed to parse JSON");
+      http.end();
+      return false;
     }
-  }
-  else
-  {
+  } else {
     Serial.print("Bad response: ");
     Serial.println(http.getString());
+    http.end();
+    return false;
   }
 
   http.end();
+  return true;
+}
+
+// ===== Fetch Delay from API =====
+void fetchDelayFromAPI() {
+  callApiAndParse(delay_api_url, [](const JsonDocument& doc) {
+    float dt = doc["dt_value"] | 5;
+    httpInterval = (unsigned long)(dt * 1000);
+    Serial.print("Updated delay interval: ");
+    Serial.println(httpInterval);
+  });
 }
 
 // ===== Fetch Source Control from API =====
-void fetchSourceControlFromAPI()
-{
-  if (WiFi.status() != WL_CONNECTED)
-    return;
-
-  HTTPClient http;
-  String fullUrl = String(base_url) + src_api_url;
-  Serial.print("Calling API: ");
-  Serial.println(fullUrl);
-
-  if (!http.begin(secureClient, fullUrl))
-  {
-    Serial.println("HTTP begin failed!");
-    return;
-  }
-
-  http.addHeader("Content-Type", "application/json");
-
-  int httpCode = http.GET();
-  Serial.print("HTTP response code: ");
-  Serial.println(httpCode);
-
-  if (httpCode == 200)
-  {
-    String payload = http.getString();
-    Serial.println("API response:");
-    Serial.println(payload);
-
-    StaticJsonDocument<200> doc;
-    if (deserializeJson(doc, payload) == DeserializationError::Ok)
-    {
-      srcValue = doc["src_value"].as<String>();
-      Serial.print("Updated source control: ");
-      Serial.println(srcValue);
-    }
-    else
-    {
-      Serial.println("Failed to parse JSON");
-    }
-  }
-  else
-  {
-    Serial.print("Bad response: ");
-    Serial.println(http.getString());
-  }
-
-  http.end();
+void fetchSourceControlFromAPI() {
+  callApiAndParse(src_api_url, [](const JsonDocument& doc) {
+    srcValue = doc["src_value"].as<String>();
+    Serial.print("Updated source control: ");
+    Serial.println(srcValue);
+  });
 }
 
 // ===== Handle REST API Poll =====
-void handleRestApi()
-{
-  if (WiFi.status() != WL_CONNECTED)
-    return;
-
-  HTTPClient http;
-  String fullUrl = String(base_url) + api_url;
-  http.begin(secureClient, fullUrl);
-  http.addHeader("Content-Type", "application/json");
-
-  int httpCode = http.GET();
-  Serial.print("HTTP code (control API): ");
-  Serial.println(httpCode);
-
-  if (httpCode == 200)
-  {
-    String payload = http.getString();
-    StaticJsonDocument<200> doc;
-    if (deserializeJson(doc, payload) == DeserializationError::Ok)
-    {
-      int command = doc["command"];
-      digitalWrite(ledPin, command == 1 ? HIGH : LOW);
-    }
-    else
-    {
-      Serial.println("Failed to parse REST JSON");
-    }
-  }
-  else
-  {
-    Serial.print("REST API error code: ");
-    Serial.println(httpCode);
-  }
-
-  http.end();
+void handleRestApi() {
+  callApiAndParse(api_url, [](const JsonDocument& doc) {
+    int command = doc["command"] | 0;
+    digitalWrite(ledPin, command == 1 ? HIGH : LOW);
+    Serial.print("LED set via REST API: ");
+    Serial.println(command);
+  });
 }
 
 // ===== Setup =====
-void setup()
-{
+void setup() {
   Serial.begin(115200);
   pinMode(ledPin, OUTPUT);
   pinMode(motionPin, INPUT);
@@ -299,8 +211,7 @@ void setup()
 }
 
 // ===== Main Loop =====
-void loop()
-{
+void loop() {
   if (srcValue == "MQTT") {
     if (!mqttClient.connected())
       reconnectMQTT();
@@ -320,7 +231,7 @@ void loop()
       mqttClient.publish(mqtt_topic, "motion OFF");
       motionActive = false;
     }
-  }
+  } 
   else if (srcValue == "DB") {
     if (millis() - lastHttpRequestTime >= httpInterval) {
       lastHttpRequestTime = millis();

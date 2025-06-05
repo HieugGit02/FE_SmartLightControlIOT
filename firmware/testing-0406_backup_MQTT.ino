@@ -46,6 +46,9 @@ const unsigned long motionTimeout = 10000;
 bool motionActive = false;
 String srcValue = "DB";
 
+unsigned long lastSrcCheck = 0;
+const unsigned long srcCheckInterval = 5000; // check every 5 seconds
+
 // ===== Connect to available WiFi =====
 void connectToWiFi()
 {
@@ -119,24 +122,23 @@ void reconnectMQTT()
 {
   while (!mqttClient.connected())
   {
-    Serial.print("Connecting to MQTT...");
+    Serial.print("Attempting MQTT connection...");
     if (mqttClient.connect("ESP8266Client", mqtt_user, mqtt_pass))
     {
-      Serial.println("MQTT connected!");
-      if (mqttClient.subscribe(mqtt_topic))
-      {
-        Serial.print("Subscribed to topic: ");
-        Serial.println(mqtt_topic);
+      Serial.println("connected");
+
+      if (mqttClient.subscribe(mqtt_topic)) {
+        Serial.println("Subscribed successfully to topic!");
+      } else {
+        Serial.println("Failed to subscribe!");
       }
-      else
-      {
-        Serial.println("Subscription failed!");
-      }
+
     }
     else
     {
-      Serial.print("MQTT connection failed, state: ");
-      Serial.println(mqttClient.state());
+      Serial.print("Failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(" try again in 5 seconds");
       delay(5000);
     }
   }
@@ -295,18 +297,30 @@ void setup()
   Serial.println("MQTT setup complete.");
 
   fetchDelayFromAPI();
-  fetchSourceControlFromAPI();
 }
 
 // ===== Main Loop =====
 void loop()
 {
+  // Always run MQTT loop
+  if (mqttClient.connected()) {
+    mqttClient.loop();  // <<< This MUST run frequently
+  }
+
+  // Reconnect MQTT only if srcValue is MQTT
   if (srcValue == "MQTT") {
-    if (!mqttClient.connected())
+    if (!mqttClient.connected()) {
       reconnectMQTT();
-    mqttClient.loop();
-  } 
-  else if (srcValue == "MOTION") {
+    }
+  }
+
+  // Periodically fetch source control (non-blocking)
+  if (millis() - lastSrcCheck >= srcCheckInterval) {
+    lastSrcCheck = millis();
+    fetchSourceControlFromAPI();
+  }
+
+  if (srcValue == "MOTION") {
     int motionValue = digitalRead(motionPin);
     if (motionValue == HIGH) {
       if (!motionActive) {
@@ -320,8 +334,7 @@ void loop()
       mqttClient.publish(mqtt_topic, "motion OFF");
       motionActive = false;
     }
-  }
-  else if (srcValue == "DB") {
+  } else if (srcValue == "DB") {
     if (millis() - lastHttpRequestTime >= httpInterval) {
       lastHttpRequestTime = millis();
       handleRestApi();
@@ -329,3 +342,4 @@ void loop()
     }
   }
 }
+
