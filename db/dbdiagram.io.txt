@@ -1,0 +1,27 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table delay_time {
+  dt_value float
+}
+
+Table lamps {
+  id int [primary key]
+  name varchar(100)
+  state int
+}
+
+Table lamp_audit {
+  audit_id int [primary key, increment]
+  lamp_id int
+  old_state int
+  new_state int
+  action_time timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table source_control {
+  src_value varchar(20)
+}
+
+// Relationships
+Ref: lamp_audit.lamp_id > lamps.id
