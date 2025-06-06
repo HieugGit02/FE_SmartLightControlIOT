@@ -162,312 +162,359 @@
       font-size: 50px;
       margin-top: 30px;
     }
+
+    .glow {
+      animation: glowEffect 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes glowEffect {
+      from {
+        text-shadow: 0 0 5px #ffc107, 0 0 10px #ffc107, 0 0 20px #ffc107;
+      }
+
+      to {
+        text-shadow: 0 0 20px #ffd54f, 0 0 30px #ffd54f, 0 0 40px #ffd54f;
+      }
+    }
   </style>
 </head>
 
 <body>
-<h1>Lighting Control System</h1>
+  <h1>Lighting Control System</h1>
 
-<div class="settings">
-  <div class="setting-box">
-    <label for="delayInput">Delay (s):</label>
-    <input type="number" id="delayInput" placeholder="Delay (s)" step="0.1">
-    <button onclick="updateDelay()" title="Update delay" type="button">
-      <!-- Clock Icon -->
-      <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="none" stroke="#fff"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
-      </svg>
-    </button>
-  </div>
-  <div class="setting-box">
-    <label for="motionSwitch">Motion Sensor</label>
-    <div class="toggle">
-      <input type="checkbox" id="motionSwitch" />
-      <label for="motionSwitch" class="toggle-label"></label>
+  <div class="settings">
+    <div class="setting-box">
+      <label for="delayInput">Delay (s):</label>
+      <input type="number" id="delayInput" placeholder="Delay (s)" step="0.1">
+      <button onclick="updateDelay()" title="Update delay" type="button">
+        <!-- Clock Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="none" stroke="#fff"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      </button>
     </div>
-  </div>
-</div>
-
-<div class="dashboard">
-  <div class="section">
-    <h2>Database Mode</h2>
-    <div class="toggle">
-      <input type="checkbox" id="dbSwitch" />
-      <label for="dbSwitch" class="toggle-label"></label>
-    </div>
-    <div id="dbControl" class="hidden">
-      <button id="dbButton" class="control-btn off">ON</button>
+    <div class="setting-box">
+      <label for="motionSwitch">Motion Sensor</label>
+      <div class="toggle">
+        <input type="checkbox" id="motionSwitch" />
+        <label for="motionSwitch" class="toggle-label"></label>
+      </div>
     </div>
   </div>
 
-  <div class="section">
-    <h2>MQTT Mode</h2>
-    <div class="toggle">
-      <input type="checkbox" id="mqttSwitch" />
-      <label for="mqttSwitch" class="toggle-label"></label>
+  <div class="dashboard">
+    <div class="section">
+      <h2>Database Mode</h2>
+      <div class="toggle">
+        <input type="checkbox" id="dbSwitch" />
+        <label for="dbSwitch" class="toggle-label"></label>
+      </div>
+      <div id="dbControl" class="hidden">
+        <button id="dbButton" class="control-btn off">ON</button>
+      </div>
     </div>
-    <div id="mqttControl" class="hidden">
-      <button id="mqttButton" class="control-btn off">ON</button>
+
+    <div class="section">
+      <h2>MQTT Mode</h2>
+      <div class="toggle">
+        <input type="checkbox" id="mqttSwitch" />
+        <label for="mqttSwitch" class="toggle-label"></label>
+      </div>
+      <div id="mqttControl" class="hidden">
+        <button id="mqttButton" class="control-btn off">ON</button>
+      </div>
     </div>
   </div>
-</div>
 
-<div id="status"></div>
-<div class="light-indicator" id="lightIcon">💡</div>
+  <div id="status"></div>
+  <div class="light-indicator" id="lightIcon">💡</div>
 
-<script>
-  const dbSwitch = document.getElementById("dbSwitch");
-  const mqttSwitch = document.getElementById("mqttSwitch");
-  const motionSwitch = document.getElementById("motionSwitch");
-  const dbControl = document.getElementById("dbControl");
-  const mqttControl = document.getElementById("mqttControl");
-  const dbButton = document.getElementById("dbButton");
-  const mqttButton = document.getElementById("mqttButton");
-  const statusBox = document.getElementById("status");
-  const lightIcon = document.getElementById("lightIcon");
-  let dbState = 0;
-  let mqttState = 0;
+  <script>
+    const dbSwitch = document.getElementById("dbSwitch");
+    const mqttSwitch = document.getElementById("mqttSwitch");
+    const motionSwitch = document.getElementById("motionSwitch");
+    const dbControl = document.getElementById("dbControl");
+    const mqttControl = document.getElementById("mqttControl");
+    const dbButton = document.getElementById("dbButton");
+    const mqttButton = document.getElementById("mqttButton");
+    const statusBox = document.getElementById("status");
+    const lightIcon = document.getElementById("lightIcon");
+    let dbState = 0;
+    let mqttState = 0;
 
-  function updateButton(button, state) {
-    button.textContent = state === 1 ? "Off" : "On";
-    button.classList.toggle("on", state === 1);
-    button.classList.toggle("off", state === 0);
-    updateIcon(state);
-  }
-
-  function updateIcon(state) {
-    lightIcon.style.color = state === 1 ? "#ffc107" : "#aaa";
-  }
-
-  function updateBackground(state) {
-    document.body.style.background = state === 1 ? "#d1ffd6" : "#f0f2f5";
-  }
-
-  function showStatus(msg, success = true) {
-    statusBox.textContent = msg;
-    statusBox.style.color = success ? "green" : "red";
-  }
-
-  function updateDelay() {
-    const delayVal = parseFloat(document.getElementById('delayInput').value);
-    if (isNaN(delayVal)) {
-      alert("Please enter a valid number for delay time.");
-      return;
+    function updateButton(button, state) {
+      button.textContent = state === 1 ? "Off" : "On";
+      button.classList.toggle("on", state === 1);
+      button.classList.toggle("off", state === 0);
+      updateIcon(state);
     }
-    if (delayVal < 0) {
-      alert("Delay time must be a non-negative number.");
-      return;
-    }
-    fetch('/api/delay', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ s: delayVal })
-    })
-            .then(res => res.json())
-            .then(data => {
-              alert(data.status || 'Delay time updated successfully!');
-            })
-            .catch(err => {
-              console.error(err);
-              alert('Error updating delay time.');
-            });
-  }
 
-  function disableOtherSwitches(activeSwitch) {
-    const switches = [motionSwitch, dbSwitch, mqttSwitch];
-    const controls = [null, dbControl, mqttControl];
-    switches.forEach((sw, index) => {
-      if (sw !== activeSwitch) {
-        sw.checked = false;
-        if (controls[index]) {
-          controls[index].classList.add("hidden");
+    function updateIcon(state) {
+      lightIcon.style.color = state === 1 ? "#ffc107" : "#aaa";
+      lightIcon.classList.toggle("glow", state === 1);
+    }
+
+    function updateBackground(state) {
+      document.body.style.background = state === 1 ? "#fff8e1" : "#f0f2f5";
+    }
+
+    function showStatus(msg, success = true) {
+      statusBox.textContent = msg;
+      statusBox.style.color = success ? "green" : "red";
+    }
+
+    function updateDelay() {
+      const delayVal = parseFloat(document.getElementById('delayInput').value);
+      if (isNaN(delayVal)) {
+        alert("Please enter a valid number for delay time.");
+        return;
+      }
+      if (delayVal < 0) {
+        alert("Delay time must be a non-negative number.");
+        return;
+      }
+      fetch('/api/delay', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ s: delayVal })
+      })
+        .then(res => res.json())
+        .then(data => {
+          alert(data.status || 'Delay time updated successfully!');
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Error updating delay time.');
+        });
+    }
+
+    function disableOtherSwitches(activeSwitch) {
+      const switches = [motionSwitch, dbSwitch, mqttSwitch];
+      const controls = [null, dbControl, mqttControl];
+      switches.forEach((sw, index) => {
+        if (sw !== activeSwitch) {
+          sw.checked = false;
+          if (controls[index]) {
+            controls[index].classList.add("hidden");
+          }
         }
+      });
+      // Reset lamp states and UI when switching modes
+      dbState = 0;
+      mqttState = 0;
+      updateButton(dbButton, 0);
+      updateButton(mqttButton, 0);
+      updateBackground(0);
+      updateIcon(0);
+    }
+
+    motionSwitch.addEventListener("change", () => {
+      if (motionSwitch.checked) {
+        disableOtherSwitches(motionSwitch);
+        fetch("/api/src", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ s: 'MOTION' })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.error) {
+              showStatus("Switched to Motion mode successfully!");
+            } else {
+              showStatus("Error switching to Motion mode: " + data.error, false);
+              motionSwitch.checked = false; // Revert on error
+            }
+          })
+          .catch(() => {
+            showStatus("Error connecting to API for Motion mode", false);
+            motionSwitch.checked = false; // Revert on error
+          });
+      } else {
+        fetch("/api/src", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ s: 'MOTION' }) // Default to MOTION when turning off
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.error) {
+              showStatus("Motion mode disabled.");
+            } else {
+              showStatus("Error disabling Motion mode: " + data.error, false);
+            }
+          })
+          .catch(() => showStatus("Error connecting to API", false));
       }
     });
-    // Reset lamp states and UI when switching modes
-    dbState = 0;
-    mqttState = 0;
-    updateButton(dbButton, 0);
-    updateButton(mqttButton, 0);
-    updateBackground(0);
-    updateIcon(0);
-  }
 
-  motionSwitch.addEventListener("change", () => {
-    if (motionSwitch.checked) {
-      disableOtherSwitches(motionSwitch);
-      fetch("/api/src", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ s: 'MOTION' })
-      })
-              .then(res => res.json())
-              .then(data => {
-                if (!data.error) {
-                  showStatus("Switched to Motion mode successfully!");
-                } else {
-                  showStatus("Error switching to Motion mode: " + data.error, false);
-                  motionSwitch.checked = false; // Revert on error
-                }
-              })
-              .catch(() => {
-                showStatus("Error connecting to API for Motion mode", false);
-                motionSwitch.checked = false; // Revert on error
-              });
-    } else {
-      fetch("/api/src", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ s: 'MOTION' }) // Default to MOTION when turning off
-      })
-              .then(res => res.json())
-              .then(data => {
-                if (!data.error) {
-                  showStatus("Motion mode disabled.");
-                } else {
-                  showStatus("Error disabling Motion mode: " + data.error, false);
-                }
-              })
-              .catch(() => showStatus("Error connecting to API", false));
-    }
-  });
+    dbSwitch.addEventListener("change", () => {
+      if (dbSwitch.checked) {
+        disableOtherSwitches(dbSwitch);
+        dbControl.classList.remove("hidden");
+        fetch("/api/src", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ s: 'DB' })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.error) {
+              updateButton(dbButton, dbState);
+              showStatus("Switched to Database mode. Lamp is OFF.");
+            } else {
+              showStatus("Error switching to Database mode: " + data.error, false);
+              dbSwitch.checked = false;
+              dbControl.classList.add("hidden");
+            }
+          })
+          .catch(() => {
+            showStatus("Error connecting to API for Database mode", false);
+            dbSwitch.checked = false;
+            dbControl.classList.add("hidden");
+          });
+      } else {
+        dbControl.classList.add("hidden");
+        fetch("/api/src", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ s: 'MOTION' }) // Default to MOTION
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.error) {
+              showStatus("Database mode disabled.");
+            } else {
+              showStatus("Error disabling Database mode: " + data.error, false);
+            }
+          })
+          .catch(() => showStatus("Error connecting to API", false));
+        updateBackground(0);
+        updateIcon(0);
+      }
+    });
 
-  dbSwitch.addEventListener("change", () => {
-    if (dbSwitch.checked) {
-      disableOtherSwitches(dbSwitch);
-      dbControl.classList.remove("hidden");
-      fetch("/api/src", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ s: 'DB' })
-      })
-              .then(res => res.json())
-              .then(data => {
-                if (!data.error) {
-                  updateButton(dbButton, dbState);
-                  showStatus("Switched to Database mode. Lamp is OFF.");
-                } else {
-                  showStatus("Error switching to Database mode: " + data.error, false);
-                  dbSwitch.checked = false;
-                  dbControl.classList.add("hidden");
-                }
-              })
-              .catch(() => {
-                showStatus("Error connecting to API for Database mode", false);
-                dbSwitch.checked = false;
-                dbControl.classList.add("hidden");
-              });
-    } else {
-      dbControl.classList.add("hidden");
-      fetch("/api/src", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ s: 'MOTION' }) // Default to MOTION
-      })
-              .then(res => res.json())
-              .then(data => {
-                if (!data.error) {
-                  showStatus("Database mode disabled.");
-                } else {
-                  showStatus("Error disabling Database mode: " + data.error, false);
-                }
-              })
-              .catch(() => showStatus("Error connecting to API", false));
-      updateBackground(0);
-      updateIcon(0);
-    }
-  });
+    mqttSwitch.addEventListener("change", () => {
+      if (mqttSwitch.checked) {
+        disableOtherSwitches(mqttSwitch);
+        mqttControl.classList.remove("hidden");
+        fetch("/api/src", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ s: 'MQTT' })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.error) {
+              updateButton(mqttButton, mqttState);
+              showStatus("Switched to MQTT mode. Lamp is OFF.");
+            } else {
+              showStatus("Error switching to MQTT mode: " + data.error, false);
+              mqttSwitch.checked = false;
+              mqttControl.classList.add("hidden");
+            }
+          })
+          .catch(() => {
+            showStatus("Error connecting to API for MQTT mode", false);
+            mqttSwitch.checked = false;
+            mqttControl.classList.add("hidden");
+          });
+      } else {
+        mqttControl.classList.add("hidden");
+        fetch("/api/src", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ s: 'MOTION' }) // Default to MOTION
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.error) {
+              showStatus("MQTT mode disabled.");
+            } else {
+              showStatus("Error disabling MQTT mode: " + data.error, false);
+            }
+          })
+          .catch(() => showStatus("Error connecting to API", false));
+        updateBackground(0);
+        updateIcon(0);
+      }
+    });
 
-  mqttSwitch.addEventListener("change", () => {
-    if (mqttSwitch.checked) {
-      disableOtherSwitches(mqttSwitch);
-      mqttControl.classList.remove("hidden");
-      fetch("/api/src", {
+    dbButton.addEventListener("click", () => {
+      dbState = dbState === 0 ? 1 : 0;
+      fetch("/api/control", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ s: 'MQTT' })
+        body: JSON.stringify({ command: dbState })
       })
-              .then(res => res.json())
-              .then(data => {
-                if (!data.error) {
-                  updateButton(mqttButton, mqttState);
-                  showStatus("Switched to MQTT mode. Lamp is OFF.");
-                } else {
-                  showStatus("Error switching to MQTT mode: " + data.error, false);
-                  mqttSwitch.checked = false;
-                  mqttControl.classList.add("hidden");
-                }
-              })
-              .catch(() => {
-                showStatus("Error connecting to API for MQTT mode", false);
-                mqttSwitch.checked = false;
-                mqttControl.classList.add("hidden");
-              });
-    } else {
-      mqttControl.classList.add("hidden");
-      fetch("/api/src", {
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error) {
+            updateButton(dbButton, dbState);
+            updateBackground(dbState);
+            showStatus("Updated Database state successfully!");
+          } else {
+            showStatus("Error updating Database: " + data.error, false);
+          }
+        })
+        .catch(() => showStatus("Error connecting to API", false));
+    });
+
+    mqttButton.addEventListener("click", () => {
+      mqttState = mqttState === 0 ? 1 : 0;
+      fetch("/api/mqtt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ s: 'MOTION' }) // Default to MOTION
+        body: JSON.stringify({ command: mqttState })
       })
-              .then(res => res.json())
-              .then(data => {
-                if (!data.error) {
-                  showStatus("MQTT mode disabled.");
-                } else {
-                  showStatus("Error disabling MQTT mode: " + data.error, false);
-                }
-              })
-              .catch(() => showStatus("Error connecting to API", false));
-      updateBackground(0);
-      updateIcon(0);
-    }
-  });
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error) {
+            updateButton(mqttButton, mqttState);
+            updateBackground(mqttState);
+            showStatus("Updated MQTT state successfully!");
+          } else {
+            showStatus("Error updating MQTT: " + data.error, false);
+          }
+        })
+        .catch(() => showStatus("Error connecting to API", false));
+    });
 
-  dbButton.addEventListener("click", () => {
-    dbState = dbState === 0 ? 1 : 0;
-    fetch("/api/control", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ command: dbState })
-    })
-            .then(res => res.json())
-            .then(data => {
-              if (!data.error) {
-                updateButton(dbButton, dbState);
-                updateBackground(dbState);
-                showStatus("Updated Database state successfully!");
-              } else {
-                showStatus("Error updating Database: " + data.error, false);
-              }
-            })
-            .catch(() => showStatus("Error connecting to API", false));
-  });
+    setInterval(() => {
+      fetch('/api/state')
+        .then(res => res.json())
+        .then(data => {
+          const mode = data.src;
+          const dbState = data.db_state;
+          const mqttState = data.mqtt_state;
 
-  mqttButton.addEventListener("click", () => {
-    mqttState = mqttState === 0 ? 1 : 0;
-    fetch("/api/mqtt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ command: mqttState })
-    })
-            .then(res => res.json())
-            .then(data => {
-              if (!data.error) {
-                updateButton(mqttButton, mqttState);
-                updateBackground(mqttState);
-                showStatus("Updated MQTT state successfully!");
-              } else {
-                showStatus("Error updating MQTT: " + data.error, false);
-              }
-            })
-            .catch(() => showStatus("Error connecting to API", false));
-  });
-</script>
+          // Update switch toggle UI
+          dbSwitch.checked = mode === 'DB';
+          mqttSwitch.checked = mode === 'MQTT';
+          motionSwitch.checked = mode === 'MOTION';
+
+          // Hiển thị điều khiển phù hợp
+          dbControl.classList.toggle('hidden', mode !== 'DB');
+          mqttControl.classList.toggle('hidden', mode !== 'MQTT');
+
+          // Cập nhật trạng thái nút
+          if (mode === 'DB') {
+            updateButton(dbButton, dbState);
+            updateBackground(dbState);
+          } else if (mode === 'MQTT') {
+            updateButton(mqttButton, mqttState);
+            updateBackground(mqttState);
+          } else {
+            updateBackground(0);  // Hoặc tùy thuộc trạng thái thực tế từ cảm biến
+            updateIcon(0);
+          }
+        })
+        .catch(err => console.error('Failed to sync state:', err));
+    }, 2000);
+  </script>
 </body>
 
 </html>

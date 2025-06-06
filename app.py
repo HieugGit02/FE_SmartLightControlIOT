@@ -176,6 +176,42 @@ def get_source_value():
         cursor.close()
         conn.close()
 
+@app.route('/api/state', methods=['GET'])
+def get_full_state():
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({'error': 'Database connection failed'}), 500
+
+    try:
+        cursor = conn.cursor()
+
+        # Lấy src_value
+        cursor.execute("SELECT src_value FROM source_control")
+        row = cursor.fetchone()
+        src_value = row[0] if row else 'na'
+
+        # Lấy db command
+        cursor.execute("SELECT state FROM lamps WHERE id = 1")
+        row = cursor.fetchone()
+        db_state = int(row[0]) if row else 0
+
+        # Lấy mqtt command
+        mqtt_state = int(get_last_mqtt_state())
+
+        return jsonify({
+            'src': src_value,
+            'db_state': db_state,
+            'mqtt_state': mqtt_state
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
 if __name__ == '__main__':
     # LOCAL
     # # public_url = ngrok.connect(8080)

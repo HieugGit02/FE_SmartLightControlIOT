@@ -62,6 +62,7 @@ def test_mqtt_publish(value):
         result = client.publish(MQTT_TOPIC, int(value))
         result.wait_for_publish()
         print(f"Published: {value} to topic {MQTT_TOPIC}")
+        last_message["value"] = value
 
         time.sleep(1)  # Let the message go through
         client.loop_stop()
